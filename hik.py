@@ -18,7 +18,7 @@ def callback(command: int, alarmer_pointer, alarminfo_pointer, buffer_length, us
             alarminfo_pointer, POINTER(NET_DVR_ALARMINFO_V30)).contents
         if (alarminfo_alarm_v30.dwAlarmType == ALARMINFO_V30_ALARMTYPE_MOTION_DETECTION):
             print(f"Motion detected")
-            client.publish(config.mqtt_topic + "/motion")
+            client.publish(config.mqtt_topic + "/status", '{"motion":true,"card":"","ring":false,"dismiss": false,"tamper":false,"notclosed":false}')
         else:
             print(
                 f"COMM_ALARM_V30, unhandled dwAlarmType: {alarminfo_alarm_v30.dwAlarmType}")
@@ -27,16 +27,16 @@ def callback(command: int, alarmer_pointer, alarminfo_pointer, buffer_length, us
             alarminfo_pointer, POINTER(NET_DVR_VIDEO_INTERCOM_ALARM)).contents
         if (alarminfo_alarm_video_intercom.byAlarmType == VIDEO_INTERCOM_ALARM_ALARMTYPE_DOORBELL_RINGING):
             print("Doorbell ringing")
-            client.publish(config.mqtt_topic + "/ringing")
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"","ring":true,"dismiss": false,"tamper":false,"notclosed":false}')
         elif (alarminfo_alarm_video_intercom.byAlarmType == VIDEO_INTERCOM_ALARM_ALARMTYPE_DISMISS_INCOMING_CALL):
             print("Call dismissed")
-            client.publish(config.mqtt_topic + "/dismissed")
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"","ring":false,"dismiss": true,"tamper":false,"notclosed":false}')
         elif (alarminfo_alarm_video_intercom.byAlarmType == VIDEO_INTERCOM_ALARM_ALARMTYPE_TAMPERING_ALARM):
             print("Tampering alarm")
-            client.publish(config.mqtt_topic + "/tamper")
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"","ring":false,"dismiss": false,"tamper":true,"notclosed":false}')
         elif (alarminfo_alarm_video_intercom.byAlarmType == VIDEO_INTERCOM_ALARM_ALARMTYPE_DOOR_NOT_CLOSED):
             print("Door not closed")
-            client.publish(config.mqtt_topic + "/notclosed")
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"","ring":false,"dismiss": false,"tamper":false,"notclosed":true}')
         else:
             print(
                 f"COMM_ALARM_VIDEO_INTERCOM, unhandled byAlarmType: {alarminfo_alarm_video_intercom.byAlarmType}")
@@ -47,12 +47,12 @@ def callback(command: int, alarmer_pointer, alarminfo_pointer, buffer_length, us
             print(
                 f"Unlocked by: {list(alarminfo_upload_video_intercom_event.uEventInfo.struUnlockRecord.byControlSrc)}")
             card_id = bytes(alarminfo_upload_video_intercom_event.uEventInfo.struUnlockRecord.byControlSrc).hex()
-            client.publish(config.mqtt_topic + "/unlocked", card_id)
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"' + card_id + '","ring":false,"dismiss": false,"tamper":false,"notclosed":false}')
 
         elif (
                 alarminfo_upload_video_intercom_event.byEventType == VIDEO_INTERCOM_EVENT_EVENTTYPE_ILLEGAL_CARD_SWIPING_EVENT):
             print(f"Illegal card swiping")
-            client.publish(config.mqtt_topic + "/illegalcard")
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"illegal","ring":false,"dismiss": false,"tamper":false,"notclosed":false}')
         else:
             print(
                 f"COMM_ALARM_VIDEO_INTERCOM, unhandled byEventType: {alarminfo_upload_video_intercom_event.byEventType}")
