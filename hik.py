@@ -115,6 +115,9 @@ client.on_message = on_message
 if (config.mqtt_user != ""):
     client.username_pw_set(config.mqtt_user, config.mqtt_pass)
 client.connect(config.mqtt_host, 1883, 60)
+client.publish("homeassistant/binary_sensor/hikcom/motion/config", '{"name": "Motion", "device_class": "motion", "state_topic": "' + config.mqtt_topic + '/status", "value_template": "{{ value_json.motion}}", "unique_id": "mqtt.hikcom.motion"}', 2, True)
+client.publish("homeassistant/binary_sensor/hikcom/ring/config", '{"name": "Ring", "device_class": "sound", "state_topic": "' + config.mqtt_topic + '/status", "value_template": "{{ value_json.ring}}", "unique_id": "mqtt.hikcom.ring"}', 2, True)
+client.publish("homeassistant/sensor/hikcom/card/config", '{"name": "Code", "state_topic": "' + config.mqtt_topic + '/status", "value_template": "{{ value_json.card}}", "unique_id": "mqtt.hikcom.card"}', 2, True)
 
 client.loop_forever()
 print("Done")
