@@ -18,7 +18,7 @@ def callback(command: int, alarmer_pointer, alarminfo_pointer, buffer_length, us
             alarminfo_pointer, POINTER(NET_DVR_ALARMINFO_V30)).contents
         if (alarminfo_alarm_v30.dwAlarmType == ALARMINFO_V30_ALARMTYPE_MOTION_DETECTION):
             print(f"Motion detected")
-            client.publish(config.mqtt_topic + "/status", '{"motion":true,"card":"","ring":false,"dismiss": false,"tamper":false,"notclosed":false}', 2, True)
+            client.publish(config.mqtt_topic + "/status", '{"motion":true,"card": "","ring":false,"dismiss":false,"tamper":false,"notclosed":false}', 2, True)
         else:
             print(
                 f"COMM_ALARM_V30, unhandled dwAlarmType: {alarminfo_alarm_v30.dwAlarmType}")
@@ -27,16 +27,16 @@ def callback(command: int, alarmer_pointer, alarminfo_pointer, buffer_length, us
             alarminfo_pointer, POINTER(NET_DVR_VIDEO_INTERCOM_ALARM)).contents
         if (alarminfo_alarm_video_intercom.byAlarmType == VIDEO_INTERCOM_ALARM_ALARMTYPE_DOORBELL_RINGING):
             print("Doorbell ringing")
-            client.publish(config.mqtt_topic + "/status", '{"motion":"off","card":"","ring":"on","dismiss": "off","tamper":"off","notclosed":"off"}', 2, True)
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"","ring":true,"dismiss":false,"tamper":false,"notclosed":false}', 2, True)
         elif (alarminfo_alarm_video_intercom.byAlarmType == VIDEO_INTERCOM_ALARM_ALARMTYPE_DISMISS_INCOMING_CALL):
             print("Call dismissed")
-            client.publish(config.mqtt_topic + "/status", '{"motion":"off","card":"","ring":"off","dismiss": "on","tamper":"off","notclosed":"off"}', 2, True)
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"","ring":false,"dismiss":true,"tamper":false,"notclosed":false}', 2, True)
         elif (alarminfo_alarm_video_intercom.byAlarmType == VIDEO_INTERCOM_ALARM_ALARMTYPE_TAMPERING_ALARM):
             print("Tampering alarm")
-            client.publish(config.mqtt_topic + "/status", '{"motion":"off","card":"","ring":"off","dismiss": "off","tamper":"on","notclosed":"off"}', 2, True)
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"","ring":false,"dismiss":false,"tamper":true,"notclosed":false}', 2, True)
         elif (alarminfo_alarm_video_intercom.byAlarmType == VIDEO_INTERCOM_ALARM_ALARMTYPE_DOOR_NOT_CLOSED):
             print("Door not closed")
-            client.publish(config.mqtt_topic + "/status", '{"motion":"off","card":"","ring":"off","dismiss": "off","tamper":"off","notclosed":"on"}', 2, True)
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"","ring":false,"dismiss":false,"tamper":false,"notclosed":true}', 2, True)
         else:
             print(
                 f"COMM_ALARM_VIDEO_INTERCOM, unhandled byAlarmType: {alarminfo_alarm_video_intercom.byAlarmType}")
@@ -47,12 +47,12 @@ def callback(command: int, alarmer_pointer, alarminfo_pointer, buffer_length, us
             print(
                 f"Unlocked by: {list(alarminfo_upload_video_intercom_event.uEventInfo.struUnlockRecord.byControlSrc)}")
             card_id = bytes(alarminfo_upload_video_intercom_event.uEventInfo.struUnlockRecord.byControlSrc).hex()
-            client.publish(config.mqtt_topic + "/status", '{"motion":"off","card":"' + card_id + '","ring":"off","dismiss": "off","tamper":"off","notclosed":"off"}', 2, True)
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"' + card_id + '","ring":false,"dismiss":false,"tamper":false,"notclosed":false}', 2, True)
 
         elif (
                 alarminfo_upload_video_intercom_event.byEventType == VIDEO_INTERCOM_EVENT_EVENTTYPE_ILLEGAL_CARD_SWIPING_EVENT):
             print(f"Illegal card swiping")
-            client.publish(config.mqtt_topic + "/status", '{"motion":"off","card":"illegal","ring":"off","dismiss": "off","tamper":"off","notclosed":"off"}', 2, True)
+            client.publish(config.mqtt_topic + "/status", '{"motion":false,"card":"illegal","ring":false,"dismiss":false,"tamper":false,"notclosed":false}', 2, True)
         else:
             print(
                 f"COMM_ALARM_VIDEO_INTERCOM, unhandled byEventType: {alarminfo_upload_video_intercom_event.byEventType}")
@@ -115,8 +115,8 @@ client.on_message = on_message
 if (config.mqtt_user != ""):
     client.username_pw_set(config.mqtt_user, config.mqtt_pass)
 client.connect(config.mqtt_host, 1883, 60)
-client.publish("homeassistant/sensor/hikcom/motion/config", '{"name": "Motion", "device_class": "motion", "state_topic": "' + config.mqtt_topic + '/status", "value_template": "{{ value_json.motion}}", "unique_id": "mqtt.hikcom.motion"}', 2, True)
-client.publish("homeassistant/sensor/hikcom/ring/config", '{"name": "Ring", "device_class": "sound", "state_topic": "' + config.mqtt_topic + '/status", "value_template": "{{ value_json.ring}}", "unique_id": "mqtt.hikcom.ring"}', 2, True)
+client.publish("homeassistant/binary_sensor/hikcom/motion/config", '{"name": "Motion", "device_class": "motion", "state_topic": "' + config.mqtt_topic + '/status", "value_template": "{{ value_json.motion}}", "unique_id": "mqtt.hikcom.motion"}', 2, True)
+client.publish("homeassistant/binary_sensor/hikcom/ring/config", '{"name": "Ring", "device_class": "sound", "state_topic": "' + config.mqtt_topic + '/status", "value_template": "{{ value_json.ring}}", "unique_id": "mqtt.hikcom.ring"}', 2, True)
 client.publish("homeassistant/sensor/hikcom/card/config", '{"name": "Code", "state_topic": "' + config.mqtt_topic + '/status", "value_template": "{{ value_json.card}}", "unique_id": "mqtt.hikcom.card"}', 2, True)
 
 client.loop_forever()
